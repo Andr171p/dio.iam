@@ -12,7 +12,7 @@ from .builders import build_flow_state
 from .config import FederationConfig
 from .dtos import AuthorizationCallback, AuthorizationStart, FederatedResult, FlowState
 from .exceptions import InvalidFederationStateError
-from .registry import get_federation_provider
+from .registry import get_federation_adapter
 from .types import AuthIntent, BrowserBinding
 from .validation import parse_and_validate_callback, validate_auth_intent, validate_session_match
 
@@ -43,7 +43,7 @@ class FederationService:
 
     async def start(
         self,
-        provider_name: str,
+        provider: str,
         *,
         browser_binding: BrowserBinding,
         intent: AuthIntent,
@@ -52,7 +52,7 @@ class FederationService:
     ) -> str:
         """Начинает внешнюю авторизацию и получает redirect URL."""
 
-        provider = get_federation_provider(provider_name)
+        adapter = get_federation_adapter(provider)
         validate_auth_intent(
             self._config,
             intent=intent,
@@ -61,22 +61,22 @@ class FederationService:
         )
 
         flow = build_flow_state(
-            provider=provider_name,
+            provider=provider,
             intent=intent,
             authorization_id=authorization_id,
             session=session,
         )
 
         start = AuthorizationStart(
-            redirect_uri=_callback_url(self._config, provider=provider_name),
+            redirect_uri=_callback_url(self._config, provider=provider),
             state=flow.state,
             code_challenge=_generate_code_challenge(flow.verifier),
             nonce=flow.nonce,
         )
-        url = provider.authorization_url(start)
+        url = adapter.authorization_url(start)
 
         await self._cache.set(
-            _cache_key(provider_name, flow.state, browser_binding),
+            _cache_key(provider, flow.state, browser_binding),
             flow,
             ttl=self._config.ttl,
         )
@@ -84,35 +84,35 @@ class FederationService:
 
     async def complete(
         self,
-        provider_name: str,
+        provider: str,
         params: Mapping[str, str],
         *,
         browser_binding: BrowserBinding,
         session: AuthenticationSession | None = None,
     ) -> FederatedResult:
-        provider = get_federation_provider(provider_name)
+        adapter = get_federation_adapter(provider)
 
         state = parse_and_validate_callback(params)
 
-        cache_key = _cache_key(provider_name, state, browser_binding)
+        cache_key = _cache_key(provider, state, browser_binding)
         cached_flow = await self._cache.get(cache_key)
         await self._cache.delete(cache_key)  # TODO: сделать атомарное удаление через ``cache.pop``
 
-        if cached_flow is None or cached_flow.provider != provider_name or cached_flow.state != state:
+        if cached_flow is None or cached_flow.provider != provider or cached_flow.state != state:
             raise InvalidFederationStateError()
 
         validate_session_match(self._config, state=cached_flow, session=session)
 
         callback = AuthorizationCallback(
-            redirect_uri=_callback_url(self._config, provider=provider_name),
+            redirect_uri=_callback_url(self._config, provider=provider),
             params=dict(params),
             code_verifier=cached_flow.verifier,
             expected_nonce=cached_flow.nonce,
         )
-        user_info = await provider.authenticate(callback)
+        user_info = await adapter.authenticate(callback)
 
         return FederatedResult(
-            provider=provider_name,
+            provider=provider,
             intent=cached_flow.intent,
             user_info=user_info,
             authorization_id=cached_flow.authorization_id,

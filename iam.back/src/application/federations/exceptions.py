@@ -31,3 +31,6 @@ class FederationDeniedError(ApplicationError):
 class InvalidProviderCallbackError(ApplicationError):
     status_code = HTTPStatus.BAD_REQUEST
     error_code = "invalid_provider_callback"
+
+    def __init__(self, provider: str, message: str) -> None:
+        super().__init__(f"[{provider}] {message}")

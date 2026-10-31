@@ -1,21 +1,21 @@
+from .adapter import FederationAdapter
 from .exceptions import UnsupportedProviderError
-from .provider import FederationProvider
 
-_registry: dict[str, FederationProvider] = {}
-
-
-def register_federation_provider(provider: FederationProvider) -> None:
-    if provider.name in _registry:
-        raise ValueError(f"Provider {provider.name!r} already registered!")
-
-    _registry[provider.name] = provider
+_registry: dict[str, FederationAdapter] = {}
 
 
-def get_federation_provider(name: str) -> FederationProvider:
-    if name not in _registry:
-        raise UnsupportedProviderError(f"Unsupported provider: {name}")
+def register_federation_adapter(adapter: FederationAdapter) -> None:
+    if adapter.provider in _registry:
+        raise ValueError(f"Provider {adapter.provider!r} already registered!")
 
-    if (provider := _registry[name]).name != name:
+    _registry[adapter.provider] = adapter
+
+
+def get_federation_adapter(provider: str) -> FederationAdapter:
+    if provider not in _registry:
+        raise UnsupportedProviderError(f"Unsupported provider: {provider}")
+
+    if (adapter := _registry[provider]).provider != provider:
         raise RuntimeError("Provider registry mismatch.")
 
-    return provider
+    return adapter

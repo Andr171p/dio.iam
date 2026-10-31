@@ -3,9 +3,9 @@ from typing import Protocol
 from .dtos import AuthorizationCallback, AuthorizationStart, UserInfo
 
 
-class FederationProvider(Protocol):
+class FederationAdapter(Protocol):
     @property
-    def name(self) -> str:
+    def provider(self) -> str:
         """Стабильный ключ реализации."""
 
     def authorization_url(self, start: AuthorizationStart) -> str:
