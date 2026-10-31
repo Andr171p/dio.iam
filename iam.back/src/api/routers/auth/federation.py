@@ -10,7 +10,7 @@ router = APIRouter(prefix="/federation", tags=["Federation"])
     status_code=...,
     summary="Инициация потока аутентификации",
 )
-async def start_federation(
+async def start_authentication(
     provider: Annotated[str, Path(description="Ключ провайдера", examples=["vk", "yandex"])],
 ): ...
 
@@ -20,6 +20,6 @@ async def start_federation(
     status_code=status.HTTP_200_OK,
     summary="Обрабатывает callback и завершает поток",
 )
-async def handle_federation_callback(
+async def handle_callback(
     provider: Annotated[str, Path(description="Ключ провайдера", examples=["vk", "yandex"])],
 ): ...
