@@ -5,7 +5,7 @@ from uuid import UUID
 from ddf.domain.exceptions import InvariantViolationError
 from ddf.domain.models import AggregateRoot
 
-from src.domain.users.vo import SecretHash
+from src.domain.identity.vo import SecretHash
 
 from .types import AuthMethod
 from .vo import SessionLifetime

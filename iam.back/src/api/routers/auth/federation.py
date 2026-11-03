@@ -4,6 +4,8 @@ from fastapi import APIRouter, Path, status
 
 router = APIRouter(prefix="/federation", tags=["Federation"])
 
+Provider = Annotated[str, Path(description="Ключ внешнего провайдера", examples=["vk", "yandex"])]
+
 
 @router.get(
     "/{provider}/start",
@@ -11,7 +13,7 @@ router = APIRouter(prefix="/federation", tags=["Federation"])
     summary="Инициация потока аутентификации",
 )
 async def start_authentication(
-    provider: Annotated[str, Path(description="Ключ провайдера", examples=["vk", "yandex"])],
+    provider: Provider,
 ): ...
 
 
@@ -21,5 +23,5 @@ async def start_authentication(
     summary="Обрабатывает callback и завершает поток",
 )
 async def handle_callback(
-    provider: Annotated[str, Path(description="Ключ провайдера", examples=["vk", "yandex"])],
+    provider: Provider,
 ): ...
